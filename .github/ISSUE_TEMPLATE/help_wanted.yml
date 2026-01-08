@@ -1,0 +1,9 @@
+name: '🤝 寻求帮助'
+description: '邀请他人参与协作解决难题'
+title: '[HELP]: '
+labels: ['help wanted']
+body:
+  - type: textarea
+    id: task
+    attributes:
+      label: '任务描述'

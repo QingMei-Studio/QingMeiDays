@@ -1,0 +1,9 @@
+name: '🚫 无效内容'
+description: '信息不足或无法复现的 Issue'
+title: '[INVALID]: '
+labels: ['invalid']
+body:
+  - type: textarea
+    id: reason
+    attributes:
+      label: '判定无效的理由'

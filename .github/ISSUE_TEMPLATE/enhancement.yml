@@ -1,0 +1,11 @@
+name: '📝 文档改进'
+description: '改进 README 或技术文档'
+title: '[DOCS]: '
+labels: ['documentation']
+body:
+  - type: textarea
+    id: content
+    attributes:
+      label: '建议修改的内容'
+    validations:
+      required: true

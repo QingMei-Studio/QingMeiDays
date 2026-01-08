@@ -1,0 +1,9 @@
+name: '👶 新手任务'
+description: '适合新人的入门级任务'
+title: '[GOOD FIRST ISSUE]: '
+labels: ['good first issue']
+body:
+  - type: textarea
+    id: task-detail
+    attributes:
+      label: '任务详情'

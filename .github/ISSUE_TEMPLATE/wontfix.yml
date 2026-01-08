@@ -1,0 +1,9 @@
+name: '🙅 不予修复'
+description: '判定为暂时不处理的任务'
+title: '[WONTFIX]: '
+labels: ['wontfix']
+body:
+  - type: textarea
+    id: reason
+    attributes:
+      label: '关闭理由'

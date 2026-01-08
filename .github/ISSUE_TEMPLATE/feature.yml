@@ -1,0 +1,29 @@
+name: '🚀 新功能申请'
+description: '为轻梅 Days 提议一个新点子'
+title: '[FEATURE]: '
+labels: ['feature']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢您提出新点子！请详细描述您的想法。
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: '您的功能请求是否与某个问题有关？'
+      description: '请清晰地描述该功能解决的痛点。'
+      placeholder: '例如：我发现现在的颜色选择太少了...'
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: '描述您想要的解决方案'
+      description: '您希望这个功能具体怎么运作？'
+  - type: checkboxes
+    id: importance
+    attributes:
+      label: '重要程度'
+      options:
+        - label: '我认为这是一个核心功能'
+        - label: '这是一个优化项'

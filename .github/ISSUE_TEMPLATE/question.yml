@@ -1,0 +1,11 @@
+name: '❓ 咨询疑问'
+description: '关于功能用法或代码逻辑的提问'
+title: '[QUESTION]: '
+labels: ['question']
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: '您的疑问'
+    validations:
+      required: true

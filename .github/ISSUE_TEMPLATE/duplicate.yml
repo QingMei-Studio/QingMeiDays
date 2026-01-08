@@ -1,0 +1,9 @@
+name: '📁 重复 Issue'
+description: '标记已存在的相同内容'
+title: '[DUPLICATE]: '
+labels: ['duplicate']
+body:
+  - type: input
+    id: original-link
+    attributes:
+      label: '原 Issue 链接'

@@ -1,0 +1,39 @@
+name: '🐛 Bug 反馈'
+description: '报告程序运行中的错误'
+title: '[BUG]: '
+labels: ['bug', 'triage']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈 Bug！请提供尽可能详细的信息。
+  - type: input
+    id: version
+    attributes:
+      label: '应用版本'
+      description: '您运行的是哪个版本？'
+      placeholder: '例如：v1.0.0'
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: '发生了什么？'
+      description: '请描述错误的具体表现。'
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: '复现步骤'
+      description: '我们该如何复现这个 Bug？'
+      placeholder: "1. 点击某按钮\n2. 观察到..."
+  - type: dropdown
+    id: device
+    attributes:
+      label: '设备系统版本'
+      options:
+        - 'Android 14'
+        - 'Android 13'
+        - 'Android 12'
+        - '更低版本'
