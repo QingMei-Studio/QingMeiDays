@@ -25,14 +25,15 @@ fun AddEventDialog(
     initialTitle: String = "",
     initialDate: String = "",
     initialType: Int = 0,
+    initialIsCommemoration: Boolean = false, // 新增：初始纪念模式
     initialColor: Long = 0xFFF48FB1,
     initialDesc: String = "",
     onDismiss: () -> Unit,
-    onConfirm: (String, String, Int, Long, String) -> Unit
+    onConfirm: (String, String, Int, Long, String, Boolean) -> Unit // 修改：增加 Boolean 参数
 ) {
     var title by remember { mutableStateOf(initialTitle) }
     var dateString by remember { mutableStateOf(initialDate) }
-    var isAnniversary by remember { mutableStateOf(initialType == 1) }
+    var isCommemoration by remember { mutableStateOf(initialIsCommemoration) }
     var selectedColorHex by remember { mutableStateOf(initialColor) }
     var description by remember { mutableStateOf(initialDesc) }
 
@@ -70,7 +71,7 @@ fun AddEventDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
 
-                // 标题
+                // 标题输入
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
@@ -86,7 +87,7 @@ fun AddEventDialog(
                     )
                 )
 
-                // 日期
+                // 日期选择
                 Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = dateString,
@@ -127,23 +128,32 @@ fun AddEventDialog(
                     )
                 )
 
-                // 类型
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = if (isAnniversary) "类型: 🌸 纪念日" else "类型: ⏳ 倒数日",
-                        color = qingCyanDeep
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
-                    Switch(
-                        checked = isAnniversary,
-                        onCheckedChange = { isAnniversary = it },
-                        colors = SwitchDefaults.colors(
-                            checkedTrackColor = meiPink,
-                            uncheckedTrackColor = Color.LightGray
+                // 类型切换：提醒 vs 纪念
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (isCommemoration) "类型: 🌸 纪念模式" else "类型: ⏳ 提醒模式",
+                            color = qingCyanDeep,
+                            style = MaterialTheme.typography.bodyLarge
                         )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Switch(
+                            checked = isCommemoration,
+                            onCheckedChange = { isCommemoration = it },
+                            colors = SwitchDefaults.colors(
+                                checkedTrackColor = meiPink,
+                                uncheckedTrackColor = Color.LightGray
+                            )
+                        )
+                    }
+                    Text(
+                        text = if (isCommemoration) "日子过期后将自动转为纪念，留在列表并继续同步小组件" else "仅作为临时提醒，日子过期后将自动从列表和小组件中消失",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(top = 4.dp)
                     )
                 }
 
@@ -187,9 +197,10 @@ fun AddEventDialog(
                         onConfirm(
                             title,
                             dateString,
-                            if (isAnniversary) 1 else 0,
+                            if (isCommemoration) 1 else 0, // 这里的 type 也可以根据你的需要映射
                             selectedColorHex,
-                            description
+                            description,
+                            isCommemoration // 传递新增的布尔值
                         )
                     }
                 },

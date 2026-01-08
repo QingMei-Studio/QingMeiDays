@@ -11,4 +11,5 @@ data class LifeEvent(
     val description: String = "",
     val imageUri: String? = null,
     val isTop: Boolean = false,
+    val isCommemoration: Boolean = false
 )

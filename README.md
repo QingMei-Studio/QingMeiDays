@@ -6,12 +6,13 @@
 
 ## ✨ 核心功能 (Features)
 
-- 🎨 **艺术化设计**：采用精心挑选的配色方案与艺术字体，提供极致的视觉体验。
-- 📅 **日子管理**：支持添加、编辑、删除倒数日或纪念日。
+- 🎨 **艺术化设计**：采用精心挑选的配色方案与艺术字体。
+- 📅 **智能双模式**：
+  - **⏳ 提醒模式**：针对临时任务，日子过期后将自动从 App 列表及小组件中消失。
+  - **🌸 纪念模式**：针对重要回忆，日子过期后将自动转为“纪念”状态，永久保留并显示已过去的天数。
+- 👆 **直觉化交互**：采用卡片式类型选择，点击即选，并伴有细腻的颜色过渡动画。
 - 📌 **置顶功能**：重要日子一键置顶，自动同步至桌面小组件。
-- 📱 **响应式 Widget**：基于 **Jetpack Glance** 构建，支持实时数据同步与桌面交互。
-- 🔗 **深度链接**：点击小组件直接跳转至对应的日子详情页。
-- 💾 **稳健存储**：结合 SharedPreferences 与 DataStore，确保跨进程数据的一致性。
+- 📱 **响应式 Widget**：基于 **Jetpack Glance** 构建，支持零点自动刷新与跨进程同步。s
 
 ## 🛠️ 技术栈 (Tech Stack)
 
@@ -34,13 +35,13 @@
 2. **状态注入**：使用 `updateAppWidgetState` 直接将展示数据推送到 Glance 的专用状态机。
 3. **版本控制**：通过 `widget_version` 强制触发重组，彻底解决桌面组件不刷新或显示旧数据的顽疾。
 
-详细设计文档请参阅：[`app/docs/Glance_Widget_Best_Practices.md`](./app/docs/Glance_Widget_Best_Practices.md)
+详细设计文档请参阅：[`/docs/Glance_Widget_Best_Practices.md`](./docs/Glance_Widget_Best_Practices.md)
 
 ## 📸 预览 (Screenshots)
 
-| 首页列表 | 日子详情 | 桌面小组件 |
-| -------- | -------- | ---------- |
-|          |          |            |
+|                   首页列表                   |                           日子详情                           |                   桌面小组件                   |
+| :------------------------------------------: | :----------------------------------------------------------: | :--------------------------------------------: |
+| <img src="screenshots/Home.jpg" width="180"> | <img src="screenshots/Card1.jpg" width="220" /> <img src="screenshots/Card2.jpg" width="220" /> | <img src="screenshots/widget.jpg" width="180"> |
 
 ## 📦 快速开始 (Getting Started)
 

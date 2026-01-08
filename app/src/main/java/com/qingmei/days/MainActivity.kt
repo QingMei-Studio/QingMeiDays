@@ -216,22 +216,48 @@ fun MainScreen() {
             initialTitle = editTarget?.title ?: "",
             initialDate = editTarget?.date ?: "",
             initialType = editTarget?.type ?: 0,
+            initialIsCommemoration = editTarget?.isCommemoration ?: false, // 传入初始状态
             initialColor = editTarget?.color ?: 0xFFF48FB1,
             initialDesc = editTarget?.description ?: "",
-            onDismiss = { showDialog = false },
-            onConfirm = { title, date, type, color, desc ->
+            onDismiss = {
+                showDialog = false
+                editTarget = null
+            },
+            onConfirm = { title, date, type, color, desc, isCommemoration ->
                 if (isEditing) {
                     val index = events.indexOf(editTarget)
                     if (index != -1) {
-                        val updated = editTarget!!.copy(title = title, date = date, type = type, color = color, description = desc, isTop = editTarget!!.isTop)
+                        // 修改：使用 copy 并保留 isTop，同时更新 isCommemoration
+                        val updated = editTarget!!.copy(
+                            title = title,
+                            date = date,
+                            type = type,
+                            color = color,
+                            description = desc,
+                            isTop = editTarget!!.isTop,
+                            isCommemoration = isCommemoration // 更新字段
+                        )
                         events[index] = updated
                         if (selectedEvent == editTarget) selectedEvent = updated
                     }
                 } else {
-                    events.add(LifeEvent(title = title, date = date, color = color, type = type, description = desc, isTop = false))
+                    // 新增：包含新字段
+                    events.add(0, LifeEvent(
+                        title = title,
+                        date = date,
+                        color = color,
+                        type = type,
+                        description = desc,
+                        isTop = false,
+                        isCommemoration = isCommemoration // 初始保存
+                    ))
                 }
+
+                // 执行持久化并刷新小组件
                 saveAndRefresh()
+
                 showDialog = false
+                editTarget = null
             }
         )
     }

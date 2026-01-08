@@ -3,6 +3,7 @@ package com.qingmei.days.utils
 import android.content.Context
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.glance.GlanceId
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.appwidget.updateAll
@@ -10,6 +11,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.qingmei.days.components.MyWidget
 import com.qingmei.days.model.LifeEvent
+import java.time.LocalDate
 
 // ❌ 删掉下面这行，Widget 不需要读这个全局 DataStore
 // val Context.dataStore by preferencesDataStore("qingmei_days_widget")
@@ -55,19 +57,52 @@ object DataManager {
         MyWidget().updateAll(context)
     }
 
-    // App 启动加载 (保持不变)
-    fun loadEvents(context: Context): MutableList<LifeEvent> {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val jsonString = prefs.getString(KEY_EVENTS, null)
-        return if (jsonString != null) {
+    /**
+     * 加载日子列表并进行逻辑过滤：
+     * 1. 纪念日 (Commemoration)：永远保留。
+     * 2. 提醒日 (Reminder)：过期即消失。
+     */
+    fun loadEvents(context: Context): List<LifeEvent> {
+        val sp = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val json = sp.getString(KEY_EVENTS, null) ?: return emptyList()
+
+        val type = object : TypeToken<List<LifeEvent>>() {}.type
+        val allEvents: List<LifeEvent> = try {
+            gson.fromJson(json, type)
+        } catch (e: Exception) {
+            emptyList()
+        }
+
+        val today = LocalDate.now()
+
+        // ⭐ 核心逻辑：区分类型过滤
+        return allEvents.filter { event ->
             try {
-                val type = object : TypeToken<List<LifeEvent>>() {}.type
-                gson.fromJson(jsonString, type)
+                val targetDate = LocalDate.parse(event.date)
+                // 如果是纪念日，直接保留；如果是提醒日，只有在今天或以后才保留
+                event.isCommemoration || !targetDate.isBefore(today)
             } catch (e: Exception) {
-                mutableListOf()
+                false
             }
-        } else {
-            mutableListOf()
         }
     }
+
+    suspend fun syncAllWidgets(context: Context) {
+        val events = loadEvents(context)
+        val displayEvent = events.find { it.isTop } ?: events.firstOrNull()
+        val json = displayEvent?.let { Gson().toJson(it) } ?: ""
+
+        val manager = GlanceAppWidgetManager(context)
+        val ids = manager.getGlanceIds(MyWidget::class.java)
+
+        ids.forEach { id ->
+            updateAppWidgetState(context, id) { prefs ->
+                prefs[WIDGET_EVENT_JSON] = json
+                val v = prefs[WIDGET_VERSION_KEY] ?: 0
+                prefs[WIDGET_VERSION_KEY] = v + 1
+            }
+            MyWidget().update(context, id)
+        }
+    }
+
 }

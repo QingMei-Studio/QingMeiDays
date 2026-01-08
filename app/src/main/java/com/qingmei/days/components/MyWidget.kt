@@ -16,6 +16,7 @@ import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
+import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.background
 import androidx.glance.currentState
 import androidx.glance.layout.*
@@ -33,29 +34,22 @@ import kotlin.math.abs
 class MyWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-
-//        不准在 provideGlance 外读数据
-//
-//        必须用 currentState<Preferences>()
-//
-//        key 名字和 DataManager 完全一致
-
         provideContent {
             val prefs = currentState<Preferences>()
 
-            val widgetVersion =
-                prefs[DataManager.WIDGET_VERSION_KEY] ?: 0
-
-            val json =
-                prefs[DataManager.WIDGET_EVENT_JSON]
+            val json = prefs[DataManager.WIDGET_EVENT_JSON]
+            val version = prefs[DataManager.WIDGET_VERSION_KEY] ?: 0
 
             val event = json?.takeIf { it.isNotEmpty() }?.let {
-                Gson().fromJson(it, LifeEvent::class.java)
+                runCatching {
+                    Gson().fromJson(it, LifeEvent::class.java)
+                }.getOrNull()
             }
 
-            WidgetContent(event, widgetVersion)
+            WidgetContent(event, version)
         }
     }
+
 
     @SuppressLint("RestrictedApi")
     @Composable
@@ -137,7 +131,7 @@ class MyWidget : GlanceAppWidget() {
                         )
 
                         Text(
-                            text = if (days >= 0) "还有几天" else "已经过去",
+                            text = if (days >= 0) "DAYS  LEFT" else "DAYS  AGO",
                             style = TextStyle(
                                 fontSize = 12.sp,
                                 color = ColorProvider(baseTextColor.copy(alpha = 0.7f))

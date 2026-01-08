@@ -111,6 +111,45 @@ private fun WidgetContent(event: LifeEvent?, version: Int) {
 }
 ```
 
+### D.日子生命周期管理 (Lifecycle Management)
+
+我们在本项目中实现了一套智能的生命周期过滤机制：
+
+| 类型                     | 判定逻辑                  | 过期后果                                                     |
+| ------------------------ | ------------------------- | ------------------------------------------------------------ |
+| **提醒 (Reminder)**      | `isCommemoration = false` | 跨过零点后，数据从 App 列表及 Widget 中同时消失。            |
+| **纪念 (Commemoration)** | `isCommemoration = true`  | 永久保留。Widget 自动切换文案为 `DAYS AGO` 并显示过去的天数。 |
+
+**核心代码实现：**
+
+```
+// DataManager.kt
+fun loadEvents(context: Context): List<LifeEvent> {
+    // ... 解析 JSON ...
+    return allEvents.filter { event ->
+        val targetDate = LocalDate.parse(event.date)
+        // 纪念日永远保留；提醒日仅在今天及之后保留
+        event.isCommemoration || !targetDate.isBefore(LocalDate.now())
+    }
+}
+```
+
+## E. 0 到 1 显示补救 (Self-Healing)
+
+当用户在 App 被杀掉后直接新建小组件时，通过 `getAppWidgetState` 进行补救初始化。
+
+```
+// MyWidget.kt
+override suspend fun provideGlance(context: Context, id: GlanceId) {
+    val state = getAppWidgetState<Preferences>(context, stateDefinition, id)
+    if (state[WIDGET_EVENT_JSON] == null) {
+        // 补救：如果状态为空，主动从 DataManager 拉取一次最佳事件
+        DataManager.initWidgetState(context, id)
+    }
+    provideContent { ... }
+}
+```
+
 ## 4. 排查清单 (Troubleshooting)
 
 | 现象                     | 可能原因               | 解决方案                                                     |
