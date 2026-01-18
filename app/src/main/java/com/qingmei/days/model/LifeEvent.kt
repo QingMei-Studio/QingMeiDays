@@ -7,7 +7,6 @@ data class LifeEvent(
     val title: String,
     val date: String,
     val color: Long,
-    val type: Int = 0,
     val description: String = "",
     val imageUri: String? = null,
     val isTop: Boolean = false,

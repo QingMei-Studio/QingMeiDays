@@ -24,12 +24,11 @@ import java.util.Locale
 fun AddEventDialog(
     initialTitle: String = "",
     initialDate: String = "",
-    initialType: Int = 0,
     initialIsCommemoration: Boolean = false, // 新增：初始纪念模式
     initialColor: Long = 0xFFF48FB1,
     initialDesc: String = "",
     onDismiss: () -> Unit,
-    onConfirm: (String, String, Int, Long, String, Boolean) -> Unit // 修改：增加 Boolean 参数
+    onConfirm: (String, String, Long, String, Boolean) -> Unit // 修改：增加 Boolean 参数
 ) {
     var title by remember { mutableStateOf(initialTitle) }
     var dateString by remember { mutableStateOf(initialDate) }
@@ -197,7 +196,6 @@ fun AddEventDialog(
                         onConfirm(
                             title,
                             dateString,
-                            if (isCommemoration) 1 else 0, // 这里的 type 也可以根据你的需要映射
                             selectedColorHex,
                             description,
                             isCommemoration // 传递新增的布尔值

@@ -199,7 +199,7 @@ fun MainScreen() {
                         title = event.title,
                         dateString = event.date,
                         colorHex = event.color,
-                        type = event.type,
+                        isCommemoration = event.isCommemoration,
                         isTop = event.isTop,
                         onClick = { selectedEvent = event },
                         onLongClick = { eventToDelete = event }
@@ -215,7 +215,6 @@ fun MainScreen() {
         AddEventDialog(
             initialTitle = editTarget?.title ?: "",
             initialDate = editTarget?.date ?: "",
-            initialType = editTarget?.type ?: 0,
             initialIsCommemoration = editTarget?.isCommemoration ?: false, // 传入初始状态
             initialColor = editTarget?.color ?: 0xFFF48FB1,
             initialDesc = editTarget?.description ?: "",
@@ -223,7 +222,7 @@ fun MainScreen() {
                 showDialog = false
                 editTarget = null
             },
-            onConfirm = { title, date, type, color, desc, isCommemoration ->
+            onConfirm = { title, date, color, desc, isCommemoration ->
                 if (isEditing) {
                     val index = events.indexOf(editTarget)
                     if (index != -1) {
@@ -231,7 +230,6 @@ fun MainScreen() {
                         val updated = editTarget!!.copy(
                             title = title,
                             date = date,
-                            type = type,
                             color = color,
                             description = desc,
                             isTop = editTarget!!.isTop,
@@ -246,7 +244,6 @@ fun MainScreen() {
                         title = title,
                         date = date,
                         color = color,
-                        type = type,
                         description = desc,
                         isTop = false,
                         isCommemoration = isCommemoration // 初始保存

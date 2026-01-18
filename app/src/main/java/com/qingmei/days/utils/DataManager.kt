@@ -12,6 +12,7 @@ import com.google.gson.reflect.TypeToken
 import com.qingmei.days.components.MyWidget
 import com.qingmei.days.model.LifeEvent
 import java.time.LocalDate
+import androidx.core.content.edit
 
 // ❌ 删掉下面这行，Widget 不需要读这个全局 DataStore
 // val Context.dataStore by preferencesDataStore("qingmei_days_widget")
@@ -25,6 +26,8 @@ object DataManager {
     val WIDGET_VERSION_KEY = intPreferencesKey("widget_version")
     val WIDGET_EVENT_JSON = stringPreferencesKey("widget_event_json")
 
+    val WIDGET_INDEX_KEY = intPreferencesKey("widget_index")
+
     private val gson = Gson()
 
     /**
@@ -33,29 +36,16 @@ object DataManager {
      * 2. Widget 数据直接注入到 Glance 的 State 里 (这才是 currentState 能读到的地方)
      */
     suspend fun saveAndSyncWidget(context: Context, events: List<LifeEvent>) {
-        // 1. 存入 SharedPreferences (App 内部数据)
+        // 1. 存入 SharedPreferences（App 内部数据）
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val jsonString = gson.toJson(events)
-        prefs.edit().putString(KEY_EVENTS, jsonString).apply()
+        prefs.edit { putString(KEY_EVENTS, jsonString) }
 
-        // 2. 计算 Widget 要显示的数据
-        val displayEvent = events.find { it.isTop } ?: events.firstOrNull()
-        val widgetJson = if (displayEvent != null) gson.toJson(displayEvent) else ""
-
-        // 3. ⭐ 核心修改：遍历所有 Widget，把数据塞进它们自己的 State 里
-        val manager = GlanceAppWidgetManager(context)
-        val glanceIds = manager.getGlanceIds(MyWidget::class.java)
-
-        glanceIds.forEach { glanceId ->
-            updateAppWidgetState(context, glanceId) { prefs ->
-                prefs[WIDGET_EVENT_JSON] = widgetJson
-                val oldVersion = prefs[WIDGET_VERSION_KEY] ?: 0
-                prefs[WIDGET_VERSION_KEY] = oldVersion + 1
-            }
-        }
-
-        MyWidget().updateAll(context)
+        // 2. ⭐ 不在这里选 displayEvent 了！
+        //    直接交给 syncAllWidgets 统一分配
+        syncAllWidgets(context)
     }
+
 
     /**
      * 加载日子列表并进行逻辑过滤：
@@ -70,33 +60,47 @@ object DataManager {
         val allEvents: List<LifeEvent> = try {
             gson.fromJson(json, type)
         } catch (e: Exception) {
-            emptyList()
+            return emptyList()
         }
 
         val today = LocalDate.now()
 
-        // ⭐ 核心逻辑：区分类型过滤
-        return allEvents.filter { event ->
+        // 🌟 纯净版过滤逻辑 (无 type)
+        val filteredList = allEvents.filter { event ->
             try {
+                // 1. 如果是纪念日，永远保留 (比如生日、恋爱纪念日)
+                if (event.isCommemoration) {
+                    return@filter true
+                }
+
+                // 2. 如果不是纪念日 (即倒数日/提醒日)，检查日期
                 val targetDate = LocalDate.parse(event.date)
-                // 如果是纪念日，直接保留；如果是提醒日，只有在今天或以后才保留
-                event.isCommemoration || !targetDate.isBefore(today)
+
+                // 规则：目标日期必须是 今天 或 未来
+                // (!isBefore 等价于 >= )
+                val shouldKeep = !targetDate.isBefore(today)
+
+                shouldKeep
+
             } catch (e: Exception) {
+                // 日期格式错乱的，为了安全起见先不显示，防止崩坏
                 false
             }
         }
+
+        return filteredList
     }
 
     suspend fun syncAllWidgets(context: Context) {
         val events = loadEvents(context)
-        val displayEvent = events.find { it.isTop } ?: events.firstOrNull()
-        val json = displayEvent?.let { Gson().toJson(it) } ?: ""
-
         val manager = GlanceAppWidgetManager(context)
         val ids = manager.getGlanceIds(MyWidget::class.java)
 
-        ids.forEach { id ->
+        ids.forEachIndexed  { index, id ->
+            val displayEvent = events.getOrNull(index)
+            val json = displayEvent?.let { Gson().toJson(it) } ?: ""
             updateAppWidgetState(context, id) { prefs ->
+                prefs[WIDGET_INDEX_KEY] = index
                 prefs[WIDGET_EVENT_JSON] = json
                 val v = prefs[WIDGET_VERSION_KEY] ?: 0
                 prefs[WIDGET_VERSION_KEY] = v + 1

@@ -38,6 +38,7 @@ class MyWidget : GlanceAppWidget() {
             val prefs = currentState<Preferences>()
 
             val json = prefs[DataManager.WIDGET_EVENT_JSON]
+            val index = prefs[DataManager.WIDGET_INDEX_KEY] ?: 0
             val version = prefs[DataManager.WIDGET_VERSION_KEY] ?: 0
 
             val event = json?.takeIf { it.isNotEmpty() }?.let {

@@ -29,7 +29,7 @@ fun EventCard(
     title: String,
     dateString: String,
     colorHex: Long,
-    type: Int = 0,
+    isCommemoration: Boolean = false,
     isTop: Boolean = false,
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = {},
@@ -65,7 +65,7 @@ fun EventCard(
     }
 
     val labelText = when {
-        type == 1 -> "已累计"
+        isCommemoration -> "已累计"
         daysLeft >= 0 -> "还有"
         else -> "已过期"
     }
