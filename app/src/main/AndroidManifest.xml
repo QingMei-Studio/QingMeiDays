@@ -41,15 +41,18 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <receiver android:name=".components.MyWidgetReceiver"
+        <receiver
+            android:name=".components.MyWidgetReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
 
-                <!-- 关键：添加以下广播监听，实现日期自然更新 -->
+                <action android:name="com.qingmei.days.ACTION_MIDNIGHT_UPDATE" />
+
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+
                 <action android:name="android.intent.action.DATE_CHANGED" />
                 <action android:name="android.intent.action.TIME_SET" />
-                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
 
             <meta-data
