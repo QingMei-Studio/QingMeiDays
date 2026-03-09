@@ -137,14 +137,18 @@ fun EventDetailScreen(
     val themeColor = Color(event.color)
 
     // 🌟 核心修复2：选图器只负责打开裁剪，不直接保存
+    // 🌟 终极方案：强行唤起手机自带的完整相册 App
     val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri: Uri? ->
-        uri?.let { originalUri ->
-            // 1. 暂存 Uri
-            tempImageUri = originalUri
-            // 2. 打开裁剪弹窗 (后续逻辑在底部的 ImageCropDialog 处理)
-            showCropDialog = true
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val uri: Uri? = result.data?.data
+            uri?.let { originalUri ->
+                // 1. 暂存 Uri
+                tempImageUri = originalUri
+                // 2. 打开裁剪弹窗
+                showCropDialog = true
+            }
         }
     }
 
@@ -240,7 +244,9 @@ fun EventDetailScreen(
                                 isFullScreen = true // 有图：只看大图
                             } else {
                                 // 无图：选图
-                                photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                val intent = android.content.Intent(android.content.Intent.ACTION_PICK)
+                                intent.setDataAndType(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*")
+                                photoPickerLauncher.launch(intent)
                             }
                         },
                     contentAlignment = Alignment.Center
@@ -307,7 +313,9 @@ fun EventDetailScreen(
                             onClick = {
                                 isFullScreen = false
                                 // 全屏模式下也能换图
-                                photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                                val intent = android.content.Intent(android.content.Intent.ACTION_PICK)
+                                intent.setDataAndType(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*")
+                                photoPickerLauncher.launch(intent)
                             },
                             // 确保按钮点击涟漪和文字颜色都是白色
                             colors = ButtonDefaults.textButtonColors(contentColor = Color.White),
