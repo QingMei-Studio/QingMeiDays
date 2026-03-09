@@ -34,10 +34,16 @@ import com.qingmei.days.components.EventDetailScreen
 import com.qingmei.days.model.LifeEvent
 import com.qingmei.days.ui.theme.QingMeiDaysTheme
 import com.qingmei.days.utils.DataManager
+import com.qingmei.days.components.MyWidgetReceiver
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // 【双保险】：每次打开 App 都重新定一次明天的闹钟
+        // 这样就不怕重启手机或者更新 App 导致闹钟丢失了
+        MyWidgetReceiver.scheduleNextMidnightUpdate(this)
+
         setContent {
             QingMeiDaysTheme {
                 MainScreen()

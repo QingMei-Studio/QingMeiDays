@@ -4,10 +4,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import androidx.datastore.preferences.core.Preferences
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
-import androidx.glance.appwidget.state.updateAppWidgetState
-import androidx.glance.appwidget.updateAll
 import com.qingmei.days.utils.DataManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -19,17 +16,15 @@ class MyWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget = MyWidget()
 
     companion object {
-        // 自定义一个广播 Action
+        // 自定义专属广播 Action
         const val ACTION_MIDNIGHT_UPDATE = "com.qingmei.days.ACTION_MIDNIGHT_UPDATE"
 
         // 设定下一个午夜零点的闹钟
         fun scheduleNextMidnightUpdate(context: Context) {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
             val intent = Intent(context, MyWidgetReceiver::class.java).apply {
                 action = ACTION_MIDNIGHT_UPDATE
             }
-
             val pendingIntent = PendingIntent.getBroadcast(
                 context,
                 0,
@@ -43,8 +38,7 @@ class MyWidgetReceiver : GlanceAppWidgetReceiver() {
                 .toInstant()
                 .toEpochMilli()
 
-            // 使用 set 设置闹钟（不使用 setExact，避免申请新权限，保持 App 纯净）
-            // 系统会在零点后，手机退出深度休眠或点亮屏幕时尽快触发
+            // 使用 set()，不申请额外权限，保持 App 纯净
             alarmManager.set(AlarmManager.RTC_WAKEUP, tomorrowMidnight, pendingIntent)
         }
     }
@@ -52,19 +46,20 @@ class MyWidgetReceiver : GlanceAppWidgetReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
 
-        if (intent.action == ACTION_MIDNIGHT_UPDATE ||
-            intent.action == Intent.ACTION_TIMEZONE_CHANGED) {
+        val action = intent.action
+        // 监听：自定义午夜闹钟、系统时间被手动修改、系统日期变化、时区变化
+        if (action == ACTION_MIDNIGHT_UPDATE ||
+            action == Intent.ACTION_TIME_CHANGED ||
+            action == Intent.ACTION_DATE_CHANGED ||
+            action == Intent.ACTION_TIMEZONE_CHANGED) {
 
+            // 收到广播后，强制刷新所有小组件的数据和版本号
             CoroutineScope(Dispatchers.IO).launch {
-                // ⭐ 核心修复：强制改变 version，打破 Glance 的缓存机制，确保护眼重绘
-                glanceAppWidget.updateAll(context) // 先更新一下
-                // 遍历所有组件实例强制刷新版本号
-                // 注意：如果 DataManager 里有专门的 updateVersion 方法最好，这里简写原理
                 DataManager.syncAllWidgets(context)
             }
 
-            // 闹钟是一次性的，触发完之后，马上定明天的闹钟！形成闭环！
-            if (intent.action == ACTION_MIDNIGHT_UPDATE) {
+            // 如果是午夜闹钟把我们唤醒的，顺手把明天的闹钟也定上，形成无限循环
+            if (action == ACTION_MIDNIGHT_UPDATE) {
                 scheduleNextMidnightUpdate(context)
             }
         }
@@ -75,7 +70,7 @@ class MyWidgetReceiver : GlanceAppWidgetReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             DataManager.syncAllWidgets(context)
         }
-        // 当组件被添加到桌面时，启动午夜闹钟循环
+        // 当用户第一次把小组件拖到桌面时，启动闹钟
         scheduleNextMidnightUpdate(context)
     }
 }
