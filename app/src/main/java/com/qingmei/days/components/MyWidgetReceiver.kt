@@ -2,6 +2,7 @@ package com.qingmei.days.components
 
 import android.app.AlarmManager
 import android.app.PendingIntent
+import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
@@ -16,10 +17,8 @@ class MyWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget = MyWidget()
 
     companion object {
-        // 自定义专属广播 Action
         const val ACTION_MIDNIGHT_UPDATE = "com.qingmei.days.ACTION_MIDNIGHT_UPDATE"
 
-        // 设定下一个午夜零点的闹钟
         fun scheduleNextMidnightUpdate(context: Context) {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             val intent = Intent(context, MyWidgetReceiver::class.java).apply {
@@ -32,45 +31,64 @@ class MyWidgetReceiver : GlanceAppWidgetReceiver() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
-            // 计算明天零点的时间戳
             val tomorrowMidnight = LocalDate.now().plusDays(1)
                 .atStartOfDay(ZoneId.systemDefault())
                 .toInstant()
                 .toEpochMilli()
 
-            // 使用 set()，不申请额外权限，保持 App 纯净
-            alarmManager.set(AlarmManager.RTC_WAKEUP, tomorrowMidnight, pendingIntent)
+            try {
+                // 这个方法自带系统级休眠唤醒白名单
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, tomorrowMidnight, pendingIntent)
+            } catch (e: SecurityException) {
+                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, tomorrowMidnight, pendingIntent)
+            }
         }
     }
 
     override fun onReceive(context: Context, intent: Intent) {
+        // 1. 先让 Glance 处理它自己的原生生命周期（比如新建组件），千万别抢它的控制权
         super.onReceive(context, intent)
 
         val action = intent.action
-        // 监听：自定义午夜闹钟、系统时间被手动修改、系统日期变化、时区变化
         if (action == ACTION_MIDNIGHT_UPDATE ||
             action == Intent.ACTION_TIME_CHANGED ||
             action == Intent.ACTION_DATE_CHANGED ||
             action == Intent.ACTION_TIMEZONE_CHANGED) {
 
-            // 收到广播后，强制刷新所有小组件的数据和版本号
+            // 🌟 核心突破：只在这里申请“免死金牌”！
+            val pendingResult = goAsync()
+
             CoroutineScope(Dispatchers.IO).launch {
-                DataManager.syncAllWidgets(context)
+                try {
+                    // 在免死金牌的保护下，从容地查数据、刷新小组件
+                    DataManager.syncAllWidgets(context)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                } finally {
+                    // 活儿干完了，主动交还金牌，让系统可以休眠，绝不死锁转圈！
+                    pendingResult.finish()
+                }
             }
 
-            // 如果是午夜闹钟把我们唤醒的，顺手把明天的闹钟也定上，形成无限循环
-            if (action == ACTION_MIDNIGHT_UPDATE) {
-                scheduleNextMidnightUpdate(context)
+            // 无论怎么改时间，都重新定下明天的闹钟，支持无限次测试
+            scheduleNextMidnightUpdate(context)
+        }
+    }
+
+    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+        super.onUpdate(context, appWidgetManager, appWidgetIds)
+        // 新建小组件时，立刻拉取数据，不加免死金牌，不和 Glance 冲突
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                DataManager.syncAllWidgets(context)
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
 
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
-        CoroutineScope(Dispatchers.IO).launch {
-            DataManager.syncAllWidgets(context)
-        }
-        // 当用户第一次把小组件拖到桌面时，启动闹钟
         scheduleNextMidnightUpdate(context)
     }
 }
